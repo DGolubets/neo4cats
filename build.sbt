@@ -1,3 +1,5 @@
+organization := "com.commodityvectors"
+
 name := "neo4cats"
 
 version := "0.1"
