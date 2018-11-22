@@ -41,6 +41,11 @@ object CyParameter {
   implicit def apply(value: Double): CyParameter = CyFloat(value)
 
   implicit def apply(value: Boolean): CyParameter = CyBoolean(value)
+
+  implicit def apply[T](value: Option[T])(
+      implicit encoder: T => CyParameter): CyParameter = {
+    value.map(encoder).getOrElse(CyNull)
+  }
 }
 
 /**

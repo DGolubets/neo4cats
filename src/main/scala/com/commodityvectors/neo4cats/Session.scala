@@ -1,7 +1,6 @@
 package com.commodityvectors.neo4cats
 
 import java.io.Closeable
-import java.util.concurrent.CompletionStage
 
 import scala.collection.JavaConverters._
 
@@ -16,15 +15,16 @@ import com.commodityvectors.neo4cats.util.JavaConversions._
 class Session(private val session: v1.Session) extends Closeable {
 
   def run(statement: CyStatement): IO[Cursor] = {
-    val res: CompletionStage[StatementResultCursor] = session
-      .readTransactionAsync((tx: Transaction) => {
-        tx.runAsync(statement.query,
-                    statement.parameters
-                      .mapValues(_.rawValue.asInstanceOf[AnyRef])
-                      .asJava)
-      })
-
-    res.toIO.map(c => new Cursor(c, session.typeSystem()))
+    IO.fromCompletionStage[v1.StatementResultCursor] {
+        session
+          .readTransactionAsync((tx: Transaction) => {
+            tx.runAsync(statement.query,
+                        statement.parameters
+                          .mapValues(_.rawValue.asInstanceOf[AnyRef])
+                          .asJava)
+          })
+      }
+      .map(c => new Cursor(c, session.typeSystem()))
   }
 
   def list(statement: CyStatement): IO[List[CyRecord]] = {
@@ -40,6 +40,9 @@ class Session(private val session: v1.Session) extends Closeable {
   }
 
   def shutdown(): IO[Unit] = {
-    session.closeAsync().toIO.map(_ => ())
+    IO.fromCompletionStage {
+        session.closeAsync()
+      }
+      .map(_ => ())
   }
 }

@@ -6,9 +6,8 @@ import cats.effect.IO
 
 object JavaConversions {
 
-  implicit class CompletionStageOps[T](val stage: CompletionStage[T])
-      extends AnyVal {
-    def toIO: IO[T] = {
+  implicit class IOExtensions(val io: IO.type) extends AnyVal {
+    def fromCompletionStage[T](stage: => CompletionStage[T]): IO[T] = {
       IO.async { cb =>
         stage.handle[Unit] { (value, error) =>
           if (error != null) cb(Left(error))
@@ -17,4 +16,5 @@ object JavaConversions {
       }
     }
   }
+
 }

@@ -16,37 +16,35 @@ class MainSpec extends AsyncWordSpec with Matchers with BeforeAndAfterAll {
 
   "Driver" should {
     "list results" in {
+      driver
+        .session()
+        .flatMap { session =>
+          val name = "Tom Hanks"
 
-      val session = driver.session()
-
-      val name = "Tom Hanks"
-
-      session
-        .list(cy"""
+          session
+            .list(cy"""
               MATCH (tom:Person {name: $name})-[:ACTED_IN]->(tomHanksMovies)
               RETURN tom,tomHanksMovies
             """)
+        }
         .unsafeToFuture
         .map(_.length should be > 0)
     }
 
     "stream results" in {
-
-      val session = driver.session()
-
-      session
-        .stream(cy"""
+      driver
+        .session()
+        .flatMap { session =>
+          session
+            .stream(cy"""
                MATCH (tom:Person {name: "Tom Hanks"})-[:ACTED_IN]->(tomHanksMovies)
                RETURN tom,tomHanksMovies
             """)
-        .compile
-        .toList
-        .unsafeToFuture
-        .map { res =>
-          println(res)
-          succeed
+            .compile
+            .toList
         }
-      //.map(_.length should be > 0)
+        .unsafeToFuture
+        .map(_.length should be > 0)
     }
   }
 }

@@ -52,7 +52,10 @@ class Cursor(private val cursor: StatementResultCursor,
   }
 
   def list: IO[List[CyRecord]] = {
-    cursor.listAsync().toIO.map(_.asScala.toList.map(convertRecord))
+    IO.fromCompletionStage {
+        cursor.listAsync()
+      }
+      .map(_.asScala.toList.map(convertRecord))
   }
 
   def stream: Stream[IO, CyRecord] = {

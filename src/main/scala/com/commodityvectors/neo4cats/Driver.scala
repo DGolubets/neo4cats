@@ -2,7 +2,7 @@ package com.commodityvectors.neo4cats
 
 import java.io.Closeable
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import org.neo4j.driver.v1
 import org.neo4j.driver.v1.{AuthToken, GraphDatabase}
 
@@ -12,7 +12,7 @@ class Driver(uri: String, authToken: AuthToken) extends Closeable {
 
   private val driver: v1.Driver = GraphDatabase.driver(uri, authToken)
 
-  def session(): Session = {
+  def session(): IO[Session] = IO {
     new Session(driver.session())
   }
 
@@ -21,7 +21,10 @@ class Driver(uri: String, authToken: AuthToken) extends Closeable {
   }
 
   def shutdown(): IO[Unit] = {
-    driver.closeAsync().toIO.map(_ => ())
+    IO.fromCompletionStage {
+        driver.closeAsync()
+      }
+      .map(_ => ())
   }
 }
 
